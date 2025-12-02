@@ -1,0 +1,22 @@
+# Installation requirements for the Robust Control System project
+
+# Core RL and Environment
+gymnasium>=0.29.0
+stable-baselines3>=2.0.0
+shimmy>=1.0.0
+
+# Physics engine for BipedalWalker
+box2d-py>=2.3.8
+
+# Data analysis and visualization
+pandas>=2.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Video recording
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.9
+opencv-python>=4.8.0
+
+# Scientific computing
+numpy>=1.24.0
