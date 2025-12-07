@@ -60,12 +60,29 @@ conda_result.bat
 
 ## 📂 프로젝트 구조
 
-- `custom_walker.py`: 이족 보행 환경을 수정한 Wrapper 클래스 (V12 로직 포함).
+- `custom_walker.py`: 이족 보행 환경을 수정한 Wrapper 클래스 (V9 로직).
 - `run_walker.py`: 학습 메인 스크립트 (Stable-Baselines3 PPO 사용).
 - `record_video.py`: 평가 및 영상 생성 스크립트.
 - `environment.yml`: Conda 환경 설정 파일.
-- `archive_*`: 이전 실험(V1 ~ V11)의 코드와 결과물이 보존된 아카이브 폴더.
+- `archive_*`: 이전 실험(V1 ~ V8)의 코드와 결과물이 보존된 아카이브 폴더.
 - `doc/`: 프로젝트 보고서 및 발표 자료.
 
-## 💾 학습된 모델 다운로드
-(여기에 학습된 최적 모델의 다운로드 링크를 추가할 수 있습니다.)
+---
+
+## 📊 실험 결과 요약 (Results)
+
+### 1. 학습 곡선 (Training Metrics)
+전이 학습(Transfer Learning)을 통해 초기부터 높은 성능을 유지하며 스타일을 교정합니다.
+![Training Curves](training_curves.png)
+
+### 2. 성능 평가 (Evaluation)
+다양한 환경(Normal, Heavy, Slippery)에서의 보상 분포입니다.
+![Evaluation Graph](result_graph.png)
+
+### 3. 시연 영상 (Demo)
+*(영상이 보이지 않는다면 `conda_record.bat`을 실행하여 생성하세요)*
+
+| Normal Mode | Heavy Mode | Slippery Mode |
+|:---:|:---:|:---:|
+| ![Normal](videos/walker_normal.gif) | ![Heavy](videos/walker_heavy.gif) | ![Slippery](videos/walker_slippery.gif) |
+
