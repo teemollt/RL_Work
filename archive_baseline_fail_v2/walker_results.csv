@@ -1,0 +1,4 @@
+mode,seed,episode,reward,length,energy,phase
+normal,42,-1,-92.66943362052031,1600.0,3209.8,evaluation
+heavy,42,-1,-119.89162197532751,59.1,134.15,evaluation
+slippery,42,-1,-90.75744406299388,1600.0,3208.4000000000005,evaluation

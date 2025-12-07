@@ -11,17 +11,17 @@ env/
 # IDE 설정 파일들
 .idea/
 .vscode/
-doc/
+
 
 # 학습 결과물 (용량이 커서 깃에는 안올림)
-models/
-videos/
-*.zip
-*.gif
-*.png
+# models/
+# videos/
+# *.zip
+# *.gif
+# *.png
 
 # 데이터 파일
-walker_results.csv
+# walker_results.csv
 
 # 로그
-logs/
+# logs/

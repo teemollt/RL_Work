@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, StopTrainingOnRewardThreshold, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 import argparse
 from custom_walker import make_custom_walker
@@ -49,6 +49,8 @@ class LoggingCallback(BaseCallback):
             "episode_energies": self.episode_energies,
         }
 
+from callbacks import CheckpointCallback
+
 def train_agent(
     mode: str = "normal", 
     seed: int = 42, 
@@ -75,26 +77,74 @@ def train_agent(
         print(f"Total Timesteps: {total_timesteps}")
         print(f"{'='*60}\n")
     
-    # PPO 알고리즘 설정
-    # Discrete Action Space에서의 안정성과 Sample Efficiency를 고려하여 PPO 선정.
-    # Hyperparameters는 선행 연구(BipedalWalker Benchmark)를 참고하여 튜닝함.
-    model = PPO(
-        policy="MlpPolicy",
-        env=env,
-        learning_rate=3e-4,
-        n_steps=2048,        # On-policy 특성을 고려하여 충분한 롤아웃 확보
-        batch_size=64,
-        n_epochs=10,
-        gamma=0.99,          # 장기적인 보상 고려
-        gae_lambda=0.95,
-        clip_range=0.2,
-        ent_coef=0.0,
-        verbose=verbose,
-        seed=seed,
-        tensorboard_log=log_dir
+    # PPO 알고리즘 설정 (V9 - Transfer Learning)
+    # V7(순정)에서 학습된 모델을 불러와서 '리듬감'만 추가 학습(Fine-tuning)
+    pretrained_path = "pretrained_walker.zip"
+    
+    if os.path.exists(pretrained_path) and seed == 42:
+        print(f"\n[Transfer Learning] Loading pre-trained model from '{pretrained_path}'...")
+        # 기존에 학습된 '걷기 능력'을 바탕으로 '자세 교정'만 수행
+        model = PPO.load(
+            pretrained_path, 
+            env=env,
+            learning_rate=1e-4,  # Fine-tuning: 학습률을 낮춰서 기존 지식 보호
+            tensorboard_log=log_dir,
+            verbose=verbose,
+            seed=seed,
+            clip_range=0.1
+        )
+    else:
+        # PPO 알고리즘 설정 (Standard)
+        # 만약 pretrained 모델이 없으면 처음부터 학습
+        model = PPO(
+            policy="MlpPolicy",
+            env=env,
+            learning_rate=3e-4,
+            n_steps=2048,
+            batch_size=64,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            ent_coef=0.0,
+            verbose=verbose,
+            seed=seed,
+            tensorboard_log=log_dir
+        )
+    
+    # Callbacks
+    # 1. Logging Callback (CSV 저장용)
+    log_callback = LoggingCallback(mode=mode, seed=seed, verbose=verbose)
+    
+    # 2. Checkpoint Callback
+    checkpoint_freq = max(5000, total_timesteps // 20)
+    checkpoint_path = os.path.join(save_dir, f"checkpoints_{seed}")
+    checkpoint_callback = CheckpointCallback(save_freq=checkpoint_freq, save_path=checkpoint_path)
+    
+    # 0 Step 모델 저장
+    init_model_path = os.path.join(checkpoint_path, "ppo_walker_0_steps")
+    os.makedirs(checkpoint_path, exist_ok=True)
+    model.save(init_model_path)
+    
+    # 평가 환경 별도 생성 (학습 환경과 독립적 평가)
+    eval_env = make_custom_walker(mode=mode)
+    eval_env = Monitor(eval_env)
+
+    # [Early Stopping Criteria - V9 Strict Rhythm]
+    # 리듬 보너스와 자세 보너스로 인해 점수가 매우 높게 나옵니다.
+    # 따라서 목표 점수를 1800점으로 높게 설정합니다.
+    callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=1800, verbose=1)
+    
+    eval_callback = EvalCallback(
+        eval_env,
+        callback_on_new_best=callback_on_best,
+        eval_freq=10000,
+        best_model_save_path=save_dir,
+        verbose=1
     )
     
-    callback = LoggingCallback(mode=mode, seed=seed, verbose=verbose)
+    from stable_baselines3.common.callbacks import CallbackList
+    callback = CallbackList([log_callback, checkpoint_callback, eval_callback])
     
     model.learn(
         total_timesteps=total_timesteps,
@@ -109,7 +159,7 @@ def train_agent(
     print(f"Model saved at: {model_path}")
     env.close()
     
-    return model, callback
+    return model, log_callback
 
 def evaluate_agent(model_path: str, mode: str, seed: int, num_episodes: int = 10, verbose: int = 1) -> dict:
     """학습된 모델의 성능 평가 (Inference)"""

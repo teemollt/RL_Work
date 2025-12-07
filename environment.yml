@@ -1,0 +1,21 @@
+name: rl_walker
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - swig                  # Box2D 빌드를 위한 C++ 도구 (Conda로 설치하는 것이 훨씬 안정적)
+  - pip
+  - pip:
+    - gymnasium[box2d]    # 강화학습 환경
+    - stable-baselines3   # PPO 알고리즘
+    - shimmy>=2.0.0       # API 호환성
+    - numpy
+    - pandas
+    - matplotlib
+    - seaborn
+    - imageio
+    - pygame
+    - tensorboard
+    - tqdm
+    - rich
